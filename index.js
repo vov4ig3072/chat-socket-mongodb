@@ -1,6 +1,7 @@
 import express from "express";
 import { WebSocketServer } from "ws";
 import path from "path";
+import serverRoutes from "./routes/route.js"
 const __dirname = path.resolve()
 
 const PORT = process.env.PORT ?? 8000
@@ -8,6 +9,10 @@ const app = express()
 
 app.set("view engine", "ejs")
 app.use(express.static(path.join(__dirname,"static")))
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
+
+app.use(serverRoutes)
 
 app.get("/", (req,res) => {
     res.render(`index`,{title: "Login page"})
@@ -24,6 +29,7 @@ app.listen(PORT, () => {
 
 
 let clients = {};
+let currentUser;
 const server = new WebSocketServer({ port: 8080 });
 
 server.on("connection", (socket) => {
@@ -45,7 +51,9 @@ server.on("connection", (socket) => {
       });
     } 
     else if (inputMessage.type === "user") {
+      currentUser = inputMessage.text
       clients[clientId] = inputMessage.text;
+
       console.log(`${clients[clientId]} connection`);
       server.clients.forEach((client) => {
         client.send(JSON.stringify({
@@ -55,7 +63,14 @@ server.on("connection", (socket) => {
         );
       });
     } 
-    else if (inputMessage.type === "users") {
+    else if (inputMessage.type === "disc") {
+
+      fetch("/api/mongo/update",{
+        method:"POST",
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: {name : currentUser}})
       server.clients.forEach((client) => {
         client.send(JSON.stringify({
             type: "user",

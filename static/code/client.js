@@ -3,21 +3,99 @@ let socket = new WebSocket("ws://localhost:8080")
 let userName = document.querySelector("#user-name")
 let userNameBtn = document.querySelector("#user-name-btn")
 let form = document.forms[0]
-
+let currentUser;
+  
 form.addEventListener("submit", (e) => {
     e.preventDefault()
+   
     if(userName.value !== ''){
-        currentUser = userName.value
         const message = JSON.stringify({
             type: "user",
             text: userName.value,
+            online: true
         })
-        socket.send(message)
+        fetch("/api/mongo",{
+            method:"POST",
+            headers: {
+                'Content-Type': 'application/json'
+              },
+            body: message
+        }).then(res =>res.json())
+        .then(data => {
+            if(data.exist){
 
-        window.location = "/chat"
+                alert(data.message)
+
+
+            }else{
+
+
+                alert(data.message)
+                
+
+
+            }
+
+            currentUser = data.name
+            socket.send(message)
+            console.log("client data",data)
+        
+        })
+        // window.location = "/chat"
         userName.value = ''
     }
+
+// users online
+    fetch("/api/mongo", {method:"GET"})
+    .then(res => res.json())
+    .then(data =>console.log(data))
 })
+
+
+socket.addEventListener("close", event => {
+    const message = JSON.stringify({
+                type: "disc"
+            })
+           
+            // event.preventDefault()
+    
+        
+        socket.send(message)
+        
+    })
+    
+
+// const App = {
+//     data() {
+//       return {
+//         name: ''
+//       }
+//     },
+//     methods: {
+//       async createUser() {
+//         const data = {
+//           name: this.name,
+//           status: true
+//         }
+//         const res = await fetch('/api/server', {
+//           method: 'POST',
+//           headers: {
+//             'Content-Type': 'application/json'
+//           },
+//           body: JSON.stringify(data)
+//         })
+//         // this.name = ''
+//         const newServer = await res.json()
+//         this.servers.push(newServer)
+//       },
+//       async remove(id) {
+//         await fetch(`/api/server/${id}`, {method: 'DELETE'})
+//         this.servers = this.servers.filter(s => s.id !== id)
+//       }
+//     }
+//   }
+
+
 
 
 
