@@ -2,6 +2,7 @@ import express from "express";
 import { WebSocketServer } from "ws";
 import path from "path";
 import serverRoutes from "./routes/route.js"
+import { ofline } from "./controllers/mongo.js"
 const __dirname = path.resolve()
 
 const PORT = process.env.PORT ?? 8000
@@ -15,25 +16,17 @@ app.use(express.urlencoded({ extended: false }))
 app.use(serverRoutes)
 
 app.get("/", (req,res) => {
-    res.render(`index`,{title: "Login page"})
+    res.render(`index`,{title: "Chat on WebSocket"})
 })
 
-app.get("/chat", (req,res) => {
-    res.render(`chat`, {title: "Chat page"})
-})
+// app.get("/chat", (req,res) => {
+//     res.render(`chat`, {title: "Chat page"})
+// })
 
-app.listen(PORT, () => {
-    console.log(`Server has been started on port ${PORT}...`);
-})
-
-
-
-let clients = {};
 let currentUser;
 const server = new WebSocketServer({ port: 8080 });
 
 server.on("connection", (socket) => {
-  let clientId = clientsId(clients);
 
   socket.on("message", (message) => {
     let inputMessage = JSON.parse(message);
@@ -50,67 +43,34 @@ server.on("connection", (socket) => {
         }
       });
     } 
-    else if (inputMessage.type === "user") {
+    else if (inputMessage.type === "user" || inputMessage.type === "online") {
       currentUser = inputMessage.text
-      clients[clientId] = inputMessage.text;
+      console.log(`${currentUser} connection`);
 
-      console.log(`${clients[clientId]} connection`);
       server.clients.forEach((client) => {
         client.send(JSON.stringify({
-            type: "user",
-            text: clients,
+            type: "online"
           })
         );
       });
     } 
-    else if (inputMessage.type === "disc") {
-
-      fetch("/api/mongo/update",{
-        method:"POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: {name : currentUser}})
-      server.clients.forEach((client) => {
-        client.send(JSON.stringify({
-            type: "user",
-            text: clients,
-          })
-        );
-      });
-    }
   });
 
   socket.on("close", () => {
-    console.log(`${clients[clientId]} diconnected`);
+    console.log(`${currentUser} diconnected`);
+
+    ofline(currentUser)
 
     server.clients.forEach((client) => {
       client.send(JSON.stringify({
-          type: "disconnect",
-          text: clients[clientId],
-        })
-      );
-    });
-    delete clients[clientId];
-
-    server.clients.forEach((client) => {
-      client.send(JSON.stringify({
-          type: "user",
-          text: clients,
+          type: "online",
         })
       );
     });
   });
 });
 
-/**
- *
- * @param {object} clients
- * @returns {number}
- */
 
-function clientsId(clients) {
-  let clientId = Math.floor(Math.random() * 1000 + 1);
-
-  return clients[clientId] !== undefined ? clientsId(clients) : clientId;
-}
+app.listen(PORT, () => {
+    console.log(`Server has been started on port ${PORT}...`);
+})

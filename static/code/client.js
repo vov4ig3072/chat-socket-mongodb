@@ -1,10 +1,21 @@
 let socket = new WebSocket("ws://localhost:8080")
 
+let loginConteiner = document.querySelector(".form-center")
 let userName = document.querySelector("#user-name")
-let userNameBtn = document.querySelector("#user-name-btn")
+// let userNameBtn = document.querySelector("#user-name-btn")
 let form = document.forms[0]
+
+let modal = new bootstrap.Modal(document.querySelector('#modalConfirm'));
+// let offcanvasScrolling = new bootstrap.Modal(document.querySelector('#offcanvasScrolling'));
+let alarmText = document.querySelector(".alarm-text")
+let btnModal = document.querySelector(".btn-secondary")
+
+let chatConteiner = document.querySelector(".chat")
+let listUsers = document.querySelector(".list-group")
 let currentUser;
-  
+// offcanvasScrolling.show()
+
+btnModal.addEventListener('click', () => modal.hide())
 form.addEventListener("submit", (e) => {
     e.preventDefault()
    
@@ -20,41 +31,49 @@ form.addEventListener("submit", (e) => {
                 'Content-Type': 'application/json'
               },
             body: message
-        }).then(res =>res.json())
+        })
+        .then(res =>res.json())
         .then(data => {
-            if(data.exist){
-
-                alert(data.message)
-
-
+            if(!data.online){
+                socket.send(message)
+                loginConteiner.classList.add("hide")
+                chatConteiner.classList.remove("hide")
             }else{
-
-
-                alert(data.message)
-                
-
-
+                alarmText.innerText = data.message
+                modal.show()
             }
-
-            currentUser = data.name
-            socket.send(message)
+           
             console.log("client data",data)
         
         })
-        // window.location = "/chat"
+        
         userName.value = ''
     }
-
-// users online
-    fetch("/api/mongo", {method:"GET"})
-    .then(res => res.json())
-    .then(data =>console.log(data))
 })
 
+socket.addEventListener("message", event => {
+    const message = JSON.parse(event.data)
+    if(message.type === "online"){
+        fetch("/api/mongo", {method:"GET"})
+        .then(res => res.json())
+        .then(data =>{
+            
+            while(listUsers.firstChild){
+                listUsers.firstChild.remove()
+            }
+            data.forEach(elem => {
+                let li = document.createElement('li')
+                li.classList.add("list-group-item")
+                li.innerText = elem.name
+                listUsers.append(li)
+            })
+        })
+    }
+})
 
 socket.addEventListener("close", event => {
     const message = JSON.stringify({
-                type: "disc"
+                type: "online"
             })
            
             // event.preventDefault()
@@ -63,42 +82,11 @@ socket.addEventListener("close", event => {
         socket.send(message)
         
     })
+
+//  /   const modal = new bootstrap.Modal(document.querySelector('#modalConfirm'));modal.show()
+    // let modal = document.querySelector("#modalConfirm")
+    // 
     
-
-// const App = {
-//     data() {
-//       return {
-//         name: ''
-//       }
-//     },
-//     methods: {
-//       async createUser() {
-//         const data = {
-//           name: this.name,
-//           status: true
-//         }
-//         const res = await fetch('/api/server', {
-//           method: 'POST',
-//           headers: {
-//             'Content-Type': 'application/json'
-//           },
-//           body: JSON.stringify(data)
-//         })
-//         // this.name = ''
-//         const newServer = await res.json()
-//         this.servers.push(newServer)
-//       },
-//       async remove(id) {
-//         await fetch(`/api/server/${id}`, {method: 'DELETE'})
-//         this.servers = this.servers.filter(s => s.id !== id)
-//       }
-//     }
-//   }
-
-
-
-
-
 
 
 

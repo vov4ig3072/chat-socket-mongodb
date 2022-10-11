@@ -2,7 +2,6 @@ import { MongoClient } from "mongodb";
 
 const url = 'mongodb://localhost:27017';
 const client = new MongoClient(url);
-let clientName;
 
 export async function login(req,res){
     try{
@@ -12,25 +11,39 @@ export async function login(req,res){
         try{
             await db.createCollection('Users')
         }catch{
-            console.log("data base is created");
+           
         }
+   
 
         const collection = db.collection('Users');
         
-        if(await collection.findOne({ name: req.body.text })){
+       
+        if (await collection.findOne({ name: req.body.text, online: true })) {
+
+                console.log("user online");
+            
             let sendRes = {
                 name: req.body.text,
-                message: "User name is olredy exist",
-                exist: true
+                message: `${req.body.text} is already logged.Enter another name!`,
+                online: true
             }
             res.json(sendRes)
-            clientName = req.body.text
+            // clientName = req.body.text
             
+            
+        }else if(await collection.findOne({ name: req.body.text, online: false })){
+            let sendRes = {
+                name: req.body.text,
+                message: "User name is olredy exist, do you want enter with this name?",
+                online: false
+            }
+            res.json(sendRes)
+            await collection.findOneAndUpdate({ "name": req.body.text }, {$set : { "online": true}})
         }else{
             let sendRes = {
                 name: req.body.text,
-                message: "User created",
-                exist: false
+                message: "User created, welcome to chat)) Click ok!",
+                online: false
             }
             collection.insertOne({ name: req.body.text, online: req.body.online})
             res.json(sendRes)
@@ -69,6 +82,20 @@ export async function disabled(req,res){
 
         res.json({message: `${req.body.name} left chat`})
 
+
+    }catch (error){
+        console.error(error);
+    }
+}
+
+export async function ofline(nameUser){
+    try{
+        await client.connect()
+        const db = client.db("Chat");
+        
+        const collection = db.collection('Users');
+        console.log("disconect - ",nameUser);
+        await collection.findOneAndUpdate({ "name": nameUser }, {$set : { "online": false}})
 
     }catch (error){
         console.error(error);
