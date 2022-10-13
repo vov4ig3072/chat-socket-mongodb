@@ -9,7 +9,7 @@ const PORT = process.env.PORT ?? 8000
 const app = express()
 
 app.set("view engine", "ejs")
-app.use(express.static(path.join(__dirname,"static")))
+app.use(express.static(path.join(__dirname, "static")))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 
@@ -18,10 +18,6 @@ app.use(serverRoutes)
 app.get("/", (req,res) => {
     res.render(`index`,{title: "Chat on WebSocket"})
 })
-
-// app.get("/chat", (req,res) => {
-//     res.render(`chat`, {title: "Chat page"})
-// })
 
 let currentUser;
 const server = new WebSocketServer({ port: 8080 });
@@ -43,9 +39,9 @@ server.on("connection", (socket) => {
         }
       });
     } 
-    else if (inputMessage.type === "user" || inputMessage.type === "online") {
-      currentUser = inputMessage.text
-      console.log(`${currentUser} connection`);
+    else if (inputMessage.type === "user") {
+     
+      console.log(`${inputMessage.text} connection`);
 
       server.clients.forEach((client) => {
         client.send(JSON.stringify({
@@ -54,13 +50,24 @@ server.on("connection", (socket) => {
         );
       });
     } 
+    else if(inputMessage.type === "online"){
+      if(inputMessage.text){
+          console.log(`${inputMessage.text} diconnected`);
+          ofline(inputMessage.text)
+      }
+      server.clients.forEach((client) => {
+        client.send(JSON.stringify({
+            type: "online",
+            text: inputMessage.text
+          })
+        );
+      });
+    }
   });
 
   socket.on("close", () => {
-    console.log(`${currentUser} diconnected`);
 
-    ofline(currentUser)
-
+    
     server.clients.forEach((client) => {
       client.send(JSON.stringify({
           type: "online",
@@ -69,7 +76,6 @@ server.on("connection", (socket) => {
     });
   });
 });
-
 
 app.listen(PORT, () => {
     console.log(`Server has been started on port ${PORT}...`);

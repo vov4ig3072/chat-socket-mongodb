@@ -30,3 +30,40 @@
 .hide {
     display: none;
 }
+
+.chat {
+    display: flex;
+}
+
+.message {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100vw;
+    height: 100vh;
+    margin-left: 350px;
+    padding: 0 100px;
+}
+
+.message-left {
+    text-decoration: solid;
+    font-size: 20px;
+    width: 100%;
+    padding: 10px;
+    line-height: 12px;
+}
+
+.message-right {
+    text-align: right;
+    text-decoration: solid;
+    font-size: 20px;
+    width: 100%;
+    padding: 10px;
+}
+
+.message-from {
+    margin: -3px;
+    padding: -3px;
+    font-size: 12px;
+    font-style: italic;
+}

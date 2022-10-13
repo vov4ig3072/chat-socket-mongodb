@@ -34,7 +34,6 @@ export async function login(req,res){
         }else if(await collection.findOne({ name: req.body.text, online: false })){
             let sendRes = {
                 name: req.body.text,
-                message: "User name is olredy exist, do you want enter with this name?",
                 online: false
             }
             res.json(sendRes)
@@ -42,7 +41,7 @@ export async function login(req,res){
         }else{
             let sendRes = {
                 name: req.body.text,
-                message: "User created, welcome to chat)) Click ok!",
+                message: "User created, welcome to chat))",
                 online: false
             }
             collection.insertOne({ name: req.body.text, online: req.body.online})
@@ -71,23 +70,6 @@ export async function online(req,res){
     }
 }
 
-export async function disabled(req,res){
-    try{
-        await client.connect()
-        const db = client.db("Chat");
-        
-        const collection = db.collection('Users');
-        console.log("disconect - ",req.body.name);
-        await collection.findOneAndUpdate({ name: req.body.name }, {$inc : { online: false}})
-
-        res.json({message: `${req.body.name} left chat`})
-
-
-    }catch (error){
-        console.error(error);
-    }
-}
-
 export async function ofline(nameUser){
     try{
         await client.connect()
@@ -96,6 +78,22 @@ export async function ofline(nameUser){
         const collection = db.collection('Users');
         console.log("disconect - ",nameUser);
         await collection.findOneAndUpdate({ "name": nameUser }, {$set : { "online": false}})
+
+    }catch (error){
+        console.error(error);
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+export async function disabled(req,res){
+    try{
+        await client.connect()
+        const db = client.db("Chat");
+        
+        const collection = db.collection('Users');
+        console.log("disconect - ",req.body.text);
+        await collection.findOneAndUpdate({ "name": req.body.text }, {$set : { "online": false}})
 
     }catch (error){
         console.error(error);
